@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eve’s Stay Girls Hostel Management</title>
+<!-- PWA Manifest Link -->
+<link rel="manifest" href="manifest.json">
+<!-- Theme color for PWA -->
+<meta name="theme-color" content="#4a90e2">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body {
+font-family: 'Inter', sans-serif;
+}
+/* Custom scrollbar for better aesthetics */
+::-webkit-scrollbar {
+width: 8px;
+}
+::-webkit-scrollbar-track {
+background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+background: #888;
+border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+background: #555;
+}
+/* Styles for printing */
+@media print {
+body * {
+visibility: hidden;
+}
+.printable-area.printable-area-active, .printable-area.printable-area-active * {
+visibility: visible;
+}
+.printable-area.printable-area-active {
+position: absolute;
+left: 0;
+top: 0;
+width: 100%;
+}
+.no-print {
+display: none !important;
+}
+}
+.pin-dot {
+height: 1.5rem;
+width: 1.5rem;
+background-color: #e5e7eb;
+border-radius: 50%;
+display: inline-block;
+transition: background-color 0.2s;
+}
+.pin-dot.filled {
+background-color: #3b82f6;
+}
+</style>
+</head>
+<body class="bg-gray-100 antialiased">
+<div id="loading-overlay" class="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center">
+<i class="fas fa-home text-5xl text-blue-600 animate-pulse"></i>
+<p class="mt-4 text-lg text-gray-700">Connecting to Server...</p>
+</div>
+<!-- Login Screen -->
+<div id="login-screen" class="min-h-screen flex items-center justify-center bg-gray-900 text-white hidden">
+<div class="w-full max-w-sm mx-auto p-8 rounded-2xl shadow-2xl bg-gray-800 border border-gray-700">
+<div class="text-center">
+<i class="fas fa-home text-4xl text-blue-400"></i>
+<h1 class="text-2xl font-bold mt-4">Eve’s Stay Girls Hostel</h1>
+<p class="text-gray-400">Chhota Baghara, Prayagraj</p>
+</div>
+<div id="pin-container" class="mt-8">
+<p class="text-center text-gray-300">Enter Your 4-Digit PIN</p>
+<div class="flex justify-center space-x-4 my-4">
+<span class="pin-dot"></span>
+<span class="pin-dot"></span>
+<span class="pin-dot"></span>
+<span class="pin-dot"></span>
+</div>
+<div id="login-error" class="text-red-400 text-center h-5"></div>
+</div>
+<div class="grid grid-cols-3 gap-4 mt-6">
+<!-- PIN Pad -->
+<button class="pin-btn text-2xl font-semibold bg-gray-700 p-4 rounded-xl hover:bg-gray-600 transition">1</button>
+<button class="pin-btn text-2xl font-semibold bg-gray-700 p-4 rounded-xl hover:bg-gray-600 transition">2</button>
+<button class="pin-btn text-2xl font-semibold bg-gray-700 p-4 rounded-xl hover:bg-gray-600 transition">3</button>
+<button class="pin-btn text-2xl font-semibold bg-gray-700 p-4 rounded-xl hover:bg-gray-600 transition">4</button>
+<button class="pin-btn text-2xl font-semibold bg-gray-700 p-4 rounded-xl hover:bg-gray-600 transition">5</button>
+<button class="pin-btn text-2xl font-semibold bg-gray-700 p-4 rounded-xl hover:bg-gray-600 transition">6</button>
+<button class="pin-btn text-2xl font-semibold bg-gray-700 p-4 rounded-xl hover:bg-gray-600 transition">7</button>
+<button class="pin-btn text-2xl font-semibold bg-gray-700 p-4 rounded-xl hover:bg-gray-600 transition">8</button>
+<button class="pin-btn text-2xl font-semibold bg-gray-700 p-4 rounded-xl hover:bg-gray-600 transition">9</button>
+<button id="pin-clear" class="text-lg font-semibold bg-gray-700 p-4 rounded-xl hover:bg-gray-600 transition text-yellow-400"><i class="fas fa-times"></i></button>
+<button class="pin-btn text-2xl font-semibold bg-gray-700 p-4 rounded-xl hover:bg-gray-600 transition">0</button>
+<button id="pin-backspace" class="text-lg font-semibold bg-gray-700 p-4 rounded-xl hover:bg-gray-600 transition text-yellow-400"><i class="fas fa-backspace"></i></button>
+</div>
+</div>
+</div>
+
+<!-- Main Application Screen -->
+<div id="app-screen" class="hidden">
+<header class="bg-white shadow-md sticky top-0 z-40 no-print">
+<div class="container mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex items-center justify-between h-16">
+<div class="flex items-center">
+<i class="fas fa-home text-2xl text-blue-600"></i>
+<h1 class="text-xl font-bold text-gray-800 ml-3">Eve’s Stay Hostel</h1>
+</div>
+<div class="flex items-center">
+<div id="user-info" class="text-right mr-4">
+<!-- User info will be injected here -->
+</div>
+<button id="logout-btn" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition shadow">
+<i class="fas fa-sign-out-alt mr-2"></i>Logout
+</button>
+</div>
+</div>
+</div>
+</header>
+
+<main class="container mx-auto p-4 sm:p-6 lg:p-8">
+<!-- Dynamic Content Views -->
+<div id="dashboard-view"></div>
+<div id="add-student-view" class="hidden"></div>
+<div id="report-view" class="hidden"></div>
+<div id="overdue-view" class="hidden"></div>
+<div id="room-management-view" class="hidden"></div>
+</main>
+</div>
+
+<!-- Universal Modal -->
+<div id="modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+<div id="modal-content" class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+<!-- Modal content will be injected here -->
+</div>
+</div>
+
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// --- FIREBASE & APP CONFIGURATION ---
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'hostel-management-app';
+let db, auth;
+let studentsCollectionRef;
+let unsubscribeStudents = null;
+
+const appState = {
+users: [
+{ name: 'Deep', pin: '0434' },
+{ name: 'Gulab', pin: '0435' },
+{ name: 'Julie', pin: '0436' }
+],
+currentUser: null,
+userId: null,
+students: [],
+currentPin: '',
+config: {
+floors: {
+'A': { rooms: 21 },
+'B': { rooms: 21 },
+'C': { rooms: 21 },
+'D': { rooms: 15 }
+},
+totalRooms: 78,
+}
+};
+
+// --- DOM ELEMENTS ---
+const DOMElements = {
+loadingOverlay: document.getElementById('loading-overlay'),
+loginScreen: document.getElementById('login-screen'),
+appScreen: document.getElementById('app-screen'),
+pinDots: document.querySelectorAll('.pin-dot'),
+loginError: document.getElementById('login-error'),
+userInfo: document.getElementById('user-info'),
+dashboardView: document.getElementById('dashboard-view'),
+addStudentView: document.getElementById('add-student-view'),
+reportView: document.getElementById('report-view'),
+overdueView: document.getElementById('overdue-view'),
+roomManagementView: document.getElementById('room-management-view'),
+modal: document.getElementById('modal'),
+modalContent: document.getElementById('modal-content'),
+};
+
+// --- UTILITY FUNCTIONS ---
+function kebabToCamel(s) {
+return s.replace(/-(\w)/g, (_, c) => c.toUpperCase());
+}
+
+function navigate(view) {
+Object.values(DOMElements)
+.filter(el => el.id && el.id.endsWith('-view'))
+.forEach(v => v.classList.add('hidden'));
+
+const viewKey = kebabToCamel(view) + 'View';
+const viewElement = DOMElements[viewKey];
+
+if (!viewElement) {
+console.error(`View element for key "${viewKey}" not found.`);
+return;
+}
+
+viewElement.classList.remove('hidden');
+viewElement.innerHTML = '';
+
+const renderFunction = renderMap[view];
+if (typeof renderFunction === 'function') {
+renderFunction();
+} else {
+console.error(`Render function for view "${view}" not found.`);
+}
+}
+
+function getRoomOccupancy(floor, roomNo) {
+const tenants = appState.students.filter(s => s.isActive && s.floor === floor && s.roomNo == roomNo);
+if (tenants.length === 0) return { status: 'Vacant', tenants: [] };
+if (tenants.some(t => t.occupancy === 'Full Room') || tenants.length >= 2) return { status: 'Full', tenants };
+return { status: 'Half', tenants };
+}
+
+function getOverdueMonths(lastPaidMonth) {
+const lastPaidDate = new Date(lastPaidMonth + '-01');
+const now = new Date();
+const currentDate = new Date(now.getFullYear(), now.getMonth(), 1);
+
+if (lastPaidDate >= currentDate) return 0;
+
+let months;
+months = (currentDate.getFullYear() - lastPaidDate.getFullYear()) * 12;
+months -= lastPaidDate.getMonth();
+months += currentDate.getMonth();
+return months <= 0 ? 0 : months;
+}
+
+function getOverdueDetails(student) {
+if (!student) return { overdueMonths: 0, totalDue: 0 };
+const overdueMonths = getOverdueMonths(student.rentPaidUpto);
+const dueForMonths = overdueMonths * student.baseRent;
+const totalDue = dueForMonths + (student.rentArrears || 0);
+return { overdueMonths, totalDue };
+}
+
+function showModal(content) {
+DOMElements.modalContent.innerHTML = content;
+DOMElements.modal.classList.remove('hidden');
+DOMElements.modal.classList.add('flex');
+}
+
+function hideModal() {
+DOMElements.modal.classList.add('hidden');
+DOMElements.modal.classList.remove('flex');
+DOMElements.modalContent.innerHTML = '';
+}
+
+function toBase64(file) {
+return new Promise((resolve, reject) => {
+const reader = new FileReader();
+reader.readAsDataURL(file);
+reader.onload = () => resolve(reader.result);
+reader.onerror = error => reject(error);
+});
+}
+
+// --- DATA PERSISTENCE (Firestore) ---
+function loadData() {
+if (unsubscribeStudents) unsubscribeStudents();
+
+studentsCollectionRef = collection(db, `/artifacts/${appId}/users/${appState.userId}/students`);
+
+return new Promise((resolve, reject) => {
+unsubscribeStudents = onSnapshot(studentsCollectionRef, (snapshot) => {
+appState.students = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+if (!DOMElements.appScreen.classList.contains('hidden')) {
+const currentView = Object.keys(renderMap).find(key => {
+const viewEl = DOMElements[kebabToCamel(key) + 'View'];
+return viewEl && !viewEl.classList.contains('hidden');
+});
+if (currentView) {
+navigate(currentView);
+}
+}
+resolve();
+}, (error) => {
+console.error("Error fetching students: ", error);
+reject(error);
+});
+});
+}
+
+// --- RENDER FUNCTIONS (VIEWS) ---
+function renderDashboard() {
+const activeStudents = appState.students.filter(s => s.isActive);
+const occupiedRooms = new Set(activeStudents.map(s => `${s.floor}-${s.roomNo}`)).size;
+const vacantRooms = appState.config.totalRooms - occupiedRooms;
+
+const overdueStudents = activeStudents.filter(s => getOverdueDetails(s).totalDue > 0);
+
+DOMElements.dashboardView.innerHTML = `
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+<div class="bg-white p-6 rounded-xl shadow-lg flex items-center justify-between">
+<div><p class="text-sm font-medium text-gray-500">Total Rooms</p><p class="text-3xl font-bold text-gray-800">${appState.config.totalRooms}</p></div>
+<div class="bg-blue-100 rounded-full p-3"><i class="fas fa-door-closed text-2xl text-blue-600"></i></div>
+</div>
+<div class="bg-white p-6 rounded-xl shadow-lg flex items-center justify-between">
+<div><p class="text-sm font-medium text-gray-500">Occupied Rooms</p><p class="text-3xl font-bold text-green-600">${occupiedRooms}</p></div>
+<div class="bg-green-100 rounded-full p-3"><i class="fas fa-door-open text-2xl text-green-600"></i></div>
+</div>
+<div class="bg-white p-6 rounded-xl shadow-lg flex items-center justify-between">
+<div><p class="text-sm font-medium text-gray-500">Vacant Rooms</p><p class="text-3xl font-bold text-yellow-600">${vacantRooms}</p></div>
+<div class="bg-yellow-100 rounded-full p-3"><i class="fas fa-bed text-2xl text-yellow-600"></i></div>
+</div>
+<div class="bg-white p-6 rounded-xl shadow-lg flex items-center justify-between">
+<div><p class="text-sm font-medium text-gray-500">Rent Overdue</p><p class="text-3xl font-bold text-red-600">${overdueStudents.length}</p></div>
+<div class="bg-red-100 rounded-full p-3"><i class="fas fa-exclamation-triangle text-2xl text-red-600"></i></div>
+</div>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+<button class="nav-btn bg-blue-600 text-white p-4 rounded-lg shadow hover:bg-blue-700 transition flex flex-col items-center" data-view="add-student"><i class="fas fa-user-plus text-2xl mb-2"></i> Add Student</button>
+<button class="nav-btn bg-purple-600 text-white p-4 rounded-lg shadow hover:bg-purple-700 transition flex flex-col items-center" data-view="report"><i class="fas fa-file-alt text-2xl mb-2"></i> Generate Report</button>
+<button class="nav-btn bg-teal-600 text-white p-4 rounded-lg shadow hover:bg-teal-700 transition flex flex-col items-center" data-view="room-management"><i class="fas fa-bed text-2xl mb-2"></i> Room Management</button>
+<button class="nav-btn bg-red-600 text-white p-4 rounded-lg shadow hover:bg-red-700 transition flex flex-col items-center" data-view="overdue"><i class="fas fa-calendar-times text-2xl mb-2"></i> Overdue Rent</button>
+</div>
+<div class="bg-white p-6 rounded-xl shadow-lg printable-area">
+<div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-800">Current Occupancy</h2><button id="print-occupancy-btn" class="no-print bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition"><i class="fas fa-print mr-2"></i>Print</button></div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead><tr class="bg-gray-50 border-b"><th class="p-3">Room</th><th class="p-3">Tenant Name</th><th class="p-3">Phone</th><th class="p-3">Occupancy</th><th class="p-3">Rent Paid Upto</th></tr></thead>
+<tbody>
+${activeStudents.sort((a,b) => `${a.floor}${String(a.roomNo).padStart(2,'0')}`.localeCompare(`${b.floor}${String(b.roomNo).padStart(2,'0')}`)).map(student => `
+<tr class="border-b hover:bg-gray-50">
+<td class="p-3 font-semibold">F-${student.floor}, R-${student.roomNo}</td>
+<td class="p-3">${student.name}</td>
+<td class="p-3">${student.phone}</td>
+<td class="p-3">${student.occupancy}</td>
+<td class="p-3">${new Date(student.rentPaidUpto + '-02').toLocaleString('default', { month: 'long', year: 'numeric' })}</td>
+</tr>`).join('')}
+${activeStudents.length === 0 ? `<tr><td colspan="5" class="text-center p-4 text-gray-500">No active students.</td></tr>` : ''}
+</tbody>
+</table>
+</div>
+</div>`;
+document.getElementById('print-occupancy-btn').addEventListener('click', () => {
+const occupancyReport = document.querySelector('.printable-area');
+document.querySelectorAll('.printable-area').forEach(el => el.classList.remove('printable-area-active'));
+occupancyReport.classList.add('printable-area-active');
+window.print();
+});
+}
+
+function renderAddStudent() {
+const floorOptions = Object.keys(appState.config.floors).map(f => `<option value="${f}">${f}</option>`).join('');
+DOMElements.addStudentView.innerHTML = `
+<div class="bg-white p-8 rounded-xl shadow-lg max-w-4xl mx-auto">
+<h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-4">Add New Student</h2>
+<form id="add-student-form">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div>
+<h3 class="text-lg font-semibold text-gray-700 mb-4">Personal Details</h3>
+<div class="space-y-4">
+<div><label class="block text-sm font-medium text-gray-600">Full Name</label><input type="text" name="name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" required></div>
+<div><label class="block text-sm font-medium text-gray-600">Phone Number</label><input type="tel" name="phone" pattern="[0-9]{10}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" required></div>
+<div><label class="block text-sm font-medium text-gray-600">Aadhaar Number</label><input type="text" name="aadhaar" pattern="[0-9]{12}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" required></div>
+<div><label class="block text-sm font-medium text-gray-600">Permanent Address</label><textarea name="address" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></textarea></div>
+</div>
+<h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">Parent's Details</h3>
+<div class="space-y-4">
+<div><label class="block text-sm font-medium text-gray-600">Parent's Name</label><input type="text" name="parentName" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" required></div>
+<div><label class="block text-sm font-medium text-gray-600">Parent's Contact</label><input type="tel" name="parentContact" pattern="[0-9]{10}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" required></div>
+</div>
+</div>
+<div>
+<h3 class="text-lg font-semibold text-gray-700 mb-4">Room & Rent Details</h3>
+<div class="space-y-4">
+<div class="grid grid-cols-2 gap-4">
+<div><label class="block text-sm font-medium text-gray-600">Floor</label><select id="floor-select" name="floor" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" required><option value="">Select Floor</option>${floorOptions}</select></div>
+<div><label class="block text-sm font-medium text-gray-600">Room No.</label><select id="room-no-select" name="roomNo" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" required disabled><option value="">Select Floor First</option></select></div>
+</div>
+<div><label class="block text-sm font-medium text-gray-600">Occupancy Type</label><select name="occupancy" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" required><option value="Half Room">Half Room (Shared)</option><option value="Full Room">Full Room</option></select></div>
+<div><label class="block text-sm font-medium text-gray-600">Base Rent (Monthly)</label><input type="number" name="baseRent" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" required></div>
+<div><label class="block text-sm font-medium text-gray-600">First Amount Received</label><input type="number" name="amountReceived" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" required></div>
+<div><label class="block text-sm font-medium text-gray-600">Rent Paid Upto (Month)</label><input type="month" name="rentPaidUpto" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" required></div>
+</div>
+<h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">Documents</h3>
+<div class="space-y-4">
+<div><label class="block text-sm font-medium text-gray-600">Student Photograph</label><input type="file" name="studentPhotoFile" accept="image/*" class="mt-1 block w-full text-sm" required><img id="student-photo-preview" class="mt-2 h-24 w-24 object-cover rounded-md border hidden"/></div>
+<div><label class="block text-sm font-medium text-gray-600">Aadhaar Image</label><input type="file" name="aadhaarImageFile" accept="image/*" class="mt-1 block w-full text-sm" required><img id="aadhaar-image-preview" class="mt-2 h-24 w-auto rounded-md border hidden"/></div>
+</div>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t flex justify-end gap-4">
+<button type="button" class="nav-btn bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600" data-view="dashboard">Cancel</button>
+<button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 shadow">Save Student</button>
+</div>
+</form>
+</div>`;
+const form = document.getElementById('add-student-form');
+const floorSelect = document.getElementById('floor-select');
+const roomNoSelect = document.getElementById('room-no-select');
+
+floorSelect.addEventListener('change', () => {
+const selectedFloor = floorSelect.value;
+roomNoSelect.innerHTML = '<option value="">Loading...</option>';
+if (!selectedFloor) {
+roomNoSelect.innerHTML = '<option value="">Select Floor First</option>';
+roomNoSelect.disabled = true;
+return;
+}
+const roomCount = appState.config.floors[selectedFloor].rooms;
+let roomOptions = '';
+for (let i = 1; i <= roomCount; i++) {
+const occupancy = getRoomOccupancy(selectedFloor, i);
+let label = `${i}`;
+if(occupancy.status === 'Full') label += ' (Full)';
+else if (occupancy.status === 'Half') label += ' (1 spot left)';
+roomOptions += `<option value="${i}" ${occupancy.status === 'Full' ? 'disabled' : ''}>${label}</option>`;
+}
+roomNoSelect.innerHTML = roomOptions;
+roomNoSelect.disabled = false;
+});
+
+form.addEventListener('submit', handleAddStudent);
+form.studentPhotoFile.addEventListener('change', (e) => handleImagePreview(e, 'student-photo-preview'));
+form.aadhaarImageFile.addEventListener('change', (e) => handleImagePreview(e, 'aadhaar-image-preview'));
+}
+
+function renderReport() {
+DOMElements.reportView.innerHTML = `
+<div class="bg-white p-8 rounded-xl shadow-lg max-w-5xl mx-auto">
+<div class="flex justify-between items-center mb-6 border-b pb-4">
+<h2 class="text-2xl font-bold text-gray-800">Generate Report</h2>
+<button class="nav-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300" data-view="dashboard"><i class="fas fa-arrow-left mr-2"></i>Back</button>
+</div>
+<div class="flex flex-wrap gap-4 items-end mb-6">
+<div class="flex-grow"><label class="block text-sm font-medium text-gray-600">Search by Tenant Name</label><input id="report-search-name" type="text" placeholder="Start typing name..." class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></div>
+<div class="flex-grow"><label class="block text-sm font-medium text-gray-600">Filter by Room</label><div class="flex gap-2"><select id="report-floor-filter" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"><option value="">All Floors</option>${Object.keys(appState.config.floors).map(f => `<option value="${f}">Floor ${f}</option>`).join('')}</select><input id="report-room-filter" type="number" placeholder="Room No." class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></div></div>
+<button id="report-search-btn" class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 h-fit">Search</button>
+</div>
+<div id="report-results" class="mt-6"><p class="text-center text-gray-500">Search for a tenant to see details.</p></div>
+</div>`;
+document.getElementById('report-search-btn').addEventListener('click', handleReportSearch);
+document.getElementById('report-search-name').addEventListener('input', handleReportSearch);
+}
+
+function renderOverdue() {
+const overdueStudents = appState.students
+.filter(s => s.isActive)
+.map(s => ({...s, totalDue: getOverdueDetails(s).totalDue}))
+.filter(s => s.totalDue !== 0)
+.sort((a,b) => b.totalDue - a.totalDue);
+
+DOMElements.overdueView.innerHTML = `
+<div class="bg-white p-6 rounded-xl shadow-lg">
+<div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-800">Rent Status Details</h2><button class="nav-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300" data-view="dashboard"><i class="fas fa-arrow-left mr-2"></i>Back</button></div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead><tr class="bg-gray-50 border-b"><th class="p-3">Room</th><th class="p-3">Tenant Name</th><th class="p-3">Phone</th><th class="p-3">Balance</th><th class="p-3">Actions</th></tr></thead>
+<tbody>
+${overdueStudents.map(s => {
+const balanceColor = s.totalDue > 0 ? 'text-red-600' : 'text-green-600';
+const balanceText = s.totalDue > 0 ? `₹${s.totalDue.toFixed(2)} Due` : `₹${Math.abs(s.totalDue).toFixed(2)} Credit`;
+return `
+<tr class="border-b hover:bg-gray-50">
+<td class="p-3 font-semibold">F-${s.floor}, R-${s.roomNo}</td>
+<td class="p-3">${s.name}</td>
+<td class="p-3">${s.phone}</td>
+<td class="p-3 ${balanceColor} font-bold">${balanceText}</td>
+<td class="p-3 space-x-2">
+<button class="pay-rent-btn bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-sm" data-id="${s.id}">Pay Rent</button>
+<button class="whatsapp-reminder-btn bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm" data-id="${s.id}">Reminder</button>
+</td>
+</tr>`}).join('')}
+${overdueStudents.length === 0 ? `<tr><td colspan="5" class="text-center p-6 text-gray-500">No outstanding balances. Great job!</td></tr>` : ''}
+</tbody>
+</table>
+</div>
+</div>`;
+}
+
+function renderRoomManagement() {
+DOMElements.roomManagementView.innerHTML = `
+<div class="bg-white p-6 rounded-xl shadow-lg">
+<div class="flex flex-wrap gap-4 justify-between items-center mb-4 border-b pb-4">
+<h2 class="text-xl font-bold text-gray-800">Room & Floor Management</h2>
+<div class="flex gap-4">
+<button id="shift-tenant-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"><i class="fas fa-random mr-2"></i>Shift Tenant</button>
+<button class="nav-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300" data-view="dashboard"><i class="fas fa-arrow-left mr-2"></i>Back</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+${Object.entries(appState.config.floors).map(([floor, config]) => {
+let roomsHTML = '';
+for(let i=1; i <= config.rooms; i++) {
+const occupancy = getRoomOccupancy(floor, i);
+let bgColor = 'bg-green-100', textColor = 'text-green-800';
+if (occupancy.status === 'Half') { bgColor = 'bg-yellow-100'; textColor = 'text-yellow-800'; }
+if (occupancy.status === 'Full') { bgColor = 'bg-red-100'; textColor = 'text-red-800'; }
+roomsHTML += `
+<div class="${bgColor} ${textColor} p-3 rounded-lg shadow-sm">
+<div class="font-bold">Room ${floor}-${i} <span class="text-sm font-normal">(${occupancy.status})</span></div>
+${occupancy.tenants.map(t => `<div class="text-xs text-gray-700">${t.name}</div>`).join('')}
+</div>`;
+}
+return `<div class="bg-gray-50 p-4 rounded-lg border">
+<h3 class="text-lg font-bold mb-3 text-gray-700">Floor ${floor}</h3>
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-2">${roomsHTML}</div>
+</div>`;
+}).join('')}
+</div>
+</div>`;
+document.getElementById('shift-tenant-btn').addEventListener('click', handleShiftTenant);
+}
+
+const renderMap = {
+dashboard: renderDashboard, 'add-student': renderAddStudent, report: renderReport, overdue: renderOverdue, 'room-management': renderRoomManagement,
+};
+
+// --- ACTION HANDLERS ---
+async function handleAddStudent(e) {
+e.preventDefault();
+const form = e.target;
+const formData = new FormData(form);
+const data = Object.fromEntries(formData.entries());
+
+const occupancy = getRoomOccupancy(data.floor, data.roomNo);
+if (occupancy.status === 'Full' || (occupancy.status === 'Half' && data.occupancy === 'Full Room')) {
+alert("Room is not available for the selected occupancy type.");
+return;
+}
+
+const studentPhoto = await toBase64(data.studentPhotoFile);
+const aadhaarImage = await toBase64(data.aadhaarImageFile);
+
+const baseRent = parseFloat(data.baseRent) || 0;
+const amountReceived = parseFloat(data.amountReceived) || 0;
+const rentArrears = baseRent - amountReceived;
+
+const newStudent = {
+name: data.name, phone: data.phone, aadhaar: data.aadhaar, parentName: data.parentName, parentContact: data.parentContact,
+address: data.address, floor: data.floor, roomNo: data.roomNo, occupancy: data.occupancy,
+baseRent, studentPhoto, aadhaarImage, rentPaidUpto: data.rentPaidUpto, rentArrears, isActive: true,
+};
+
+try {
+await addDoc(studentsCollectionRef, newStudent);
+alert('Student added successfully!');
+form.reset();
+navigate('dashboard');
+} catch (error) {
+console.error("Error adding student: ", error);
+alert("Failed to add student. Please try again.");
+}
+}
+
+function handleReportSearch() {
+const nameQuery = document.getElementById('report-search-name').value.toLowerCase();
+const floorQuery = document.getElementById('report-floor-filter').value;
+const roomQuery = document.getElementById('report-room-filter').value;
+const resultsContainer = document.getElementById('report-results');
+
+let results = appState.students.filter(s => s.isActive);
+if (nameQuery) results = results.filter(s => s.name.toLowerCase().includes(nameQuery));
+if (floorQuery) results = results.filter(s => s.floor === floorQuery);
+if (roomQuery) results = results.filter(s => s.roomNo == roomQuery);
+
+if (results.length === 0) {
+resultsContainer.innerHTML = '<p class="text-center text-gray-500">No matching records found.</p>';
+return;
+}
+
+resultsContainer.innerHTML = results.map(s => `
+<div class="border rounded-lg p-4 mb-4 printable-area" data-student-id="${s.id}">
+<div class="flex flex-col sm:flex-row gap-6">
+<div class="flex-shrink-0"><img src="${s.studentPhoto}" class="w-32 h-32 rounded-lg object-cover border"></div>
+<div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+<div><strong>Name:</strong> ${s.name}</div>
+<div><strong>Phone:</strong> ${s.phone}</div>
+<div><strong>Room:</strong> F-${s.floor}, R-${s.roomNo}</div>
+<div><strong>Occupancy:</strong> ${s.occupancy}</div>
+<div><strong>Address:</strong> ${s.address}</div>
+<div><strong>Parent:</strong> ${s.parentName} (${s.parentContact})</div>
+<div><strong>Rent Tariff:</strong> ₹${s.baseRent}/month</div>
+<div><strong>Last Rent Paid:</strong> ${new Date(s.rentPaidUpto + '-02').toLocaleString('default', { month: 'long', year: 'numeric' })}</div>
+</div>
+<div class="flex-shrink-0 flex flex-col items-center gap-2">
+<img src="${s.aadhaarImage}" class="w-48 h-auto rounded-md border cursor-pointer aadhaar-thumb" data-full="${s.aadhaarImage}">
+<div class="flex flex-wrap gap-2 mt-2 no-print">
+<button class="edit-btn bg-green-500 text-white px-3 py-1 rounded text-xs" data-id="${s.id}">Edit</button>
+<button class="vacate-btn bg-yellow-500 text-white px-3 py-1 rounded text-xs" data-id="${s.id}">Vacate</button>
+<button class="print-report-btn bg-blue-500 text-white px-3 py-1 rounded text-xs" data-id="${s.id}">Print</button>
+</div>
+</div>
+</div>
+</div>`).join('');
+}
+
+async function handleVacateStudent(studentId) {
+if (!confirm('Are you sure you want to vacate this student?')) return;
+try {
+const studentDoc = doc(studentsCollectionRef, studentId);
+await updateDoc(studentDoc, { isActive: false });
+alert(`Student has been marked as vacated.`);
+} catch (error) {
+console.error("Error vacating student: ", error);
+alert("Failed to vacate student. Please try again.");
+}
+}
+
+async function handleMarkRentPaid(studentId) {
+const student = appState.students.find(s => s.id == studentId);
+if (!student) return;
+const { totalDue } = getOverdueDetails(student);
+
+const content = `
+<h3 class="text-lg font-bold mb-4">Pay Rent for ${student.name}</h3>
+<form id="pay-rent-form">
+<div class="mb-4"><label class="block text-sm font-medium text-gray-600">Current Balance</label><input type="text" value="₹${totalDue.toFixed(2)}" class="mt-1 block w-full bg-gray-100 border rounded-md p-2" readonly></div>
+<div class="mb-4"><label class="block text-sm font-medium text-gray-600">Amount Received</label><input type="number" id="rent-received" min="0" step="0.01" class="mt-1 block w-full border rounded-md p-2" required></div>
+<div class="mt-6 flex justify-end gap-3">
+<button type="button" class="bg-gray-200 px-4 py-2 rounded-lg" onclick="hideModal()">Cancel</button>
+<button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg">Confirm Payment</button>
+</div>
+</form>`;
+showModal(content);
+
+document.getElementById('pay-rent-form').onsubmit = async (e) => {
+e.preventDefault();
+const rentReceived = parseFloat(document.getElementById('rent-received').value);
+if (isNaN(rentReceived) || rentReceived < 0) {
+alert('Please enter a valid amount.');
+return;
+}
+
+const newArrears = (student.rentArrears || 0) - rentReceived;
+
+try {
+const studentDoc = doc(studentsCollectionRef, studentId);
+await updateDoc(studentDoc, { rentArrears: newArrears });
+hideModal();
+
+const updatedStudent = {...student, rentArrears: newArrears};
+const finalBalance = getOverdueDetails(updatedStudent).totalDue;
+
+const message = `Dear ${student.name}, payment of ₹${rentReceived.toFixed(2)} received. New balance: ₹${finalBalance.toFixed(2)}. Thanks. - Eve's Stay`;
+showCopyMessageModal(message);
+} catch (error) {
+console.error("Error updating rent: ", error);
+alert("Failed to update rent. Please try again.");
+}
+};
+}
+
+function handleShiftTenant() {
+const activeStudents = appState.students.filter(s => s.isActive);
+const studentOptions = activeStudents.map(s => `<option value="${s.id}">${s.name} (Room ${s.floor}-${s.roomNo})</option>`).join('');
+const content = `
+<h3 class="text-lg font-bold mb-4">Shift Tenant</h3>
+<form id="shift-tenant-form">
+<div class="space-y-4">
+<div>
+<label class="block text-sm font-medium text-gray-600">Select Tenant</label>
+<select id="shift-student-select" name="studentId" class="mt-1 block w-full border rounded-md p-2" required><option value="">-- Choose --</option>${studentOptions}</select>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block text-sm font-medium text-gray-600">New Floor</label>
+<select id="shift-floor-select" name="newFloor" class="mt-1 block w-full border rounded-md p-2" required><option value="">-- Select --</option>${Object.keys(appState.config.floors).map(f => `<option value="${f}">${f}</option>`).join('')}</select>
+</div>
+<div>
+<label class="block text-sm font-medium text-gray-600">New Room No.</label>
+<select id="shift-room-no-select" name="newRoomNo" class="mt-1 block w-full border rounded-md p-2" required disabled><option value="">Select Floor</option></select>
+</div>
+</div>
+<div>
+<label class="block text-sm font-medium text-gray-600">New Occupancy</label>
+<select id="shift-occupancy-select" name="newOccupancy" class="mt-1 block w-full border rounded-md p-2" required disabled><option value="">Select Room</option></select>
+</div>
+</div>
+<div class="mt-6 flex justify-end gap-3">
+<button type="button" class="bg-gray-200 px-4 py-2 rounded-lg" onclick="hideModal()">Cancel</button>
+<button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg">Confirm Shift</button>
+</div>
+</form>`;
+showModal(content);
+
+const floorSelect = document.getElementById('shift-floor-select');
+const roomSelect = document.getElementById('shift-room-no-select');
+const occupancySelect = document.getElementById('shift-occupancy-select');
+
+floorSelect.addEventListener('change', () => {
+const selectedFloor = floorSelect.value;
+roomSelect.innerHTML = '<option value="">Select Floor</option>';
+occupancySelect.innerHTML = '<option value="">Select Room</option>';
+roomSelect.disabled = true;
+occupancySelect.disabled = true;
+if (!selectedFloor) return;
+
+const roomCount = appState.config.floors[selectedFloor].rooms;
+let roomOptions = '<option value="">-- Select --</option>';
+for (let i = 1; i <= roomCount; i++) {
+const occupancy = getRoomOccupancy(selectedFloor, i);
+if (occupancy.status !== 'Full') roomOptions += `<option value="${i}">Room ${i} (${occupancy.status})</option>`;
+}
+roomSelect.innerHTML = roomOptions;
+roomSelect.disabled = false;
+});
+
+roomSelect.addEventListener('change', () => {
+const selectedFloor = floorSelect.value;
+const selectedRoom = roomSelect.value;
+occupancySelect.innerHTML = '<option value="">Select Room</option>';
+occupancySelect.disabled = true;
+if (!selectedRoom) return;
+
+const occupancy = getRoomOccupancy(selectedFloor, selectedRoom);
+if (occupancy.status === 'Vacant') {
+occupancySelect.innerHTML = `<option value="">-- Select --</option><option value="Half Room">Half Room</option><option value="Full Room">Full Room</option>`;
+} else if (occupancy.status === 'Half') {
+occupancySelect.innerHTML = `<option value="Half Room">Half Room</option>`;
+}
+occupancySelect.disabled = false;
+});
+
+document.getElementById('shift-tenant-form').onsubmit = async (e) => {
+e.preventDefault();
+const form = e.target;
+const { studentId, newFloor, newRoomNo, newOccupancy } = Object.fromEntries(new FormData(form));
+if (!studentId || !newFloor || !newRoomNo || !newOccupancy) return alert('Please complete all fields.');
+
+const student = appState.students.find(s => s.id == studentId);
+if (!student) return alert('Error: Student not found.');
+if (student.floor === newFloor && student.roomNo == newRoomNo) return alert('Error: New room cannot be the same.');
+
+const { totalDue } = getOverdueDetails(student);
+const lastMonth = new Date();
+lastMonth.setDate(1);
+lastMonth.setMonth(lastMonth.getMonth() - 1);
+const newPaidUpto = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
+
+try {
+const studentDoc = doc(studentsCollectionRef, studentId);
+await updateDoc(studentDoc, { rentArrears: totalDue, rentPaidUpto: newPaidUpto, floor: newFloor, roomNo: newRoomNo, occupancy: newOccupancy });
+hideModal();
+alert(`${student.name} has been shifted successfully.`);
+} catch(error) {
+console.error("Error shifting tenant: ", error);
+alert("Failed to shift tenant. Please try again.");
+}
+};
+}
+
+function handleEditStudent(studentId) {
+const student = appState.students.find(s => s.id == studentId);
+if (!student) return;
+const content = `
+<h3 class="text-lg font-bold mb-4">Update Details for ${student.name}</h3>
+<form id="edit-student-form">
+<div class="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+<div><label class="block text-sm font-medium text-gray-600">Full Name</label><input type="text" name="name" value="${student.name}" class="mt-1 block w-full border rounded-md p-2" required></div>
+<div><label class="block text-sm font-medium text-gray-600">Phone Number</label><input type="tel" name="phone" value="${student.phone}" pattern="[0-9]{10}" class="mt-1 block w-full border rounded-md p-2" required></div>
+<div><label class="block text-sm font-medium text-gray-600">Permanent Address</label><textarea name="address" rows="3" class="mt-1 block w-full border rounded-md p-2">${student.address}</textarea></div>
+<div><label class="block text-sm font-medium text-gray-600">Parent's Name</label><input type="text" name="parentName" value="${student.parentName}" class="mt-1 block w-full border rounded-md p-2" required></div>
+<div><label class="block text-sm font-medium text-gray-600">Parent's Contact</label><input type="tel" name="parentContact" value="${student.parentContact}" pattern="[0-9]{10}" class="mt-1 block w-full border rounded-md p-2" required></div>
+<div><label class="block text-sm font-medium text-gray-600">Base Rent</label><input type="number" name="baseRent" value="${student.baseRent}" class="mt-1 block w-full border rounded-md p-2" required></div>
+</div>
+<div class="mt-6 flex justify-end gap-3">
+<button type="button" class="bg-gray-200 px-4 py-2 rounded-lg" onclick="hideModal()">Cancel</button>
+<button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg">Update Details</button>
+</div>
+</form>`;
+showModal(content);
+document.getElementById('edit-student-form').onsubmit = async (e) => {
+e.preventDefault();
+const form = e.target;
+const updatedData = {
+name: form.name.value, phone: form.phone.value, address: form.address.value, parentName: form.parentName.value,
+parentContact: form.parentContact.value, baseRent: parseFloat(form.baseRent.value)
+};
+try {
+const studentDoc = doc(studentsCollectionRef, studentId);
+await updateDoc(studentDoc, updatedData);
+hideModal();
+alert("Student details updated successfully.");
+} catch (error) {
+console.error("Error updating student: ", error);
+alert("Failed to update details. Please try again.");
+}
+};
+}
+
+function showCopyMessageModal(message) {
+const content = `
+<h3 class="text-lg font-bold mb-4">Copy Message</h3>
+<p class="text-sm text-gray-600 mb-2">Copy the message below and send to the tenant manually.</p>
+<textarea id="copy-textarea" class="w-full h-24 p-2 border rounded bg-gray-50">${message}</textarea>
+<div class="mt-4 flex justify-end gap-3">
+<button type="button" class="bg-gray-200 px-4 py-2 rounded-lg" onclick="hideModal()">Close</button>
+<button id="copy-msg-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg">Copy to Clipboard</button>
+</div>`;
+showModal(content);
+document.getElementById('copy-msg-btn').onclick = () => {
+document.getElementById('copy-textarea').select();
+document.execCommand('copy');
+alert('Message copied!');
+};
+}
+
+function handleImagePreview(event, previewId) {
+const preview = document.getElementById(previewId);
+const file = event.target.files[0];
+if (file) {
+preview.src = URL.createObjectURL(file);
+preview.classList.remove('hidden');
+}
+}
+
+// --- LOGIN/LOGOUT LOGIC ---
+function updatePinDisplay() {
+DOMElements.pinDots.forEach((dot, index) => { dot.classList.toggle('filled', index < appState.currentPin.length); });
+DOMElements.loginError.textContent = '';
+}
+
+function handlePinInput(digit) {
+if (appState.currentPin.length < 4) {
+appState.currentPin += digit;
+updatePinDisplay();
+if (appState.currentPin.length === 4) attemptLogin();
+}
+}
+
+function attemptLogin() {
+const user = appState.users.find(u => u.pin === appState.currentPin);
+if (user) {
+appState.currentUser = user.name;
+DOMElements.loginScreen.classList.add('hidden');
+DOMElements.appScreen.classList.remove('hidden');
+DOMElements.userInfo.innerHTML = `<p class="font-semibold text-gray-800">${appState.currentUser}</p><p class="text-xs text-gray-500">Manager</p>`;
+navigate('dashboard');
+} else {
+DOMElements.loginError.textContent = 'Invalid PIN';
+appState.currentPin = '';
+setTimeout(updatePinDisplay, 500);
+}
+}
+
+function handleLogout() {
+if (auth) auth.signOut();
+appState.currentUser = null;
+appState.currentPin = '';
+DOMElements.appScreen.classList.add('hidden');
+DOMElements.loginScreen.classList.remove('hidden');
+updatePinDisplay();
+}
+
+// --- PWA Service Worker ---
+function registerServiceWorker() {
+if ('serviceWorker' in navigator) {
+navigator.serviceWorker.register('sw.js')
+.then(registration => {
+console.log('Service Worker registered with scope:', registration.scope);
+}).catch(error => {
+console.log('Service Worker registration failed:', error);
+});
+}
+}
+
+// --- INITIALIZATION ---
+async function init() {
+registerServiceWorker();
+
+try {
+const app = initializeApp(firebaseConfig);
+db = getFirestore(app);
+auth = getAuth(app);
+if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+await signInWithCustomToken(auth, __initial_auth_token);
+} else {
+await signInAnonymously(auth);
+}
+appState.userId = auth.currentUser.uid;
+} catch (error) {
+console.error("Firebase Initialization Error: ", error);
+DOMElements.loadingOverlay.innerHTML = `<p class="text-red-500 p-4">Critical Error: Could not initialize the application's security module.</p>`;
+return;
+}
+
+try {
+await loadData();
+} catch (error) {
+DOMElements.loginError.innerHTML = '<span class="text-xs">Could not load data.</span>';
+}
+
+DOMElements.loadingOverlay.classList.add('hidden');
+DOMElements.loginScreen.classList.remove('hidden');
+
+document.querySelectorAll('.pin-btn').forEach(btn => btn.addEventListener('click', () => handlePinInput(btn.textContent)));
+document.getElementById('pin-clear').addEventListener('click', () => { appState.currentPin = ''; updatePinDisplay(); });
+document.getElementById('pin-backspace').addEventListener('click', () => { appState.currentPin = appState.currentPin.slice(0, -1); updatePinDisplay(); });
+document.getElementById('logout-btn').addEventListener('click', handleLogout);
+
+DOMElements.appScreen.addEventListener('click', (e) => {
+const navBtn = e.target.closest('.nav-btn');
+if (navBtn) navigate(navBtn.dataset.view);
+
+const vacateBtn = e.target.closest('.vacate-btn');
+if (vacateBtn) handleVacateStudent(vacateBtn.dataset.id);
+
+const editBtn = e.target.closest('.edit-btn');
+if (editBtn) handleEditStudent(editBtn.dataset.id);
+
+const payRentBtn = e.target.closest('.pay-rent-btn');
+if (payRentBtn) handleMarkRentPaid(payRentBtn.dataset.id);
+
+const printReportBtn = e.target.closest('.print-report-btn');
+if (printReportBtn) {
+const printableArea = e.target.closest('.printable-area');
+if (printableArea) {
+document.querySelectorAll('.printable-area').forEach(el => el.classList.remove('printable-area-active'));
+printableArea.classList.add('printable-area-active');
+window.print();
+}
+}
+
+const aadhaarThumb = e.target.closest('.aadhaar-thumb');
+if (aadhaarThumb) showModal(`<img src="${aadhaarThumb.dataset.full}" class="w-full h-auto rounded-lg">`);
+
+const reminderBtn = e.target.closest('.whatsapp-reminder-btn');
+if (reminderBtn) {
+const student = appState.students.find(s => s.id == reminderBtn.dataset.id);
+if (student) {
+const { totalDue } = getOverdueDetails(student);
+const message = `Dear ${student.name}, reminder: your outstanding rent is ₹${totalDue.toFixed(2)}. Kindly clear the dues. - Eve's Stay Hostel`;
+showCopyMessageModal(message);
+}
+}
+});
+
+DOMElements.modal.addEventListener('click', (e) => { if (e.target.id === 'modal') hideModal(); });
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
+
