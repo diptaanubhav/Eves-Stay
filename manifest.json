@@ -1,7 +1,7 @@
 {
 "name": "Eve’s Stay Hostel Management",
 "short_name": "Eve's Stay",
-"start_url": "/Hostel.html",
+"start_url": "/Eves-Stay/",
 "display": "standalone",
 "background_color": "#ffffff",
 "theme_color": "#4a90e2",
@@ -19,3 +19,4 @@
 }
 ]
 }
+
