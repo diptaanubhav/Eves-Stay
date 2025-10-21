@@ -1,7 +1,7 @@
 const CACHE_NAME = 'eves-stay-hostel-cache-v1';
 const urlsToCache = [
 '/',
-'/Hostel.html',
+'/index.html',
 // NOTE: We cannot cache external resources from cdns like tailwindcss or font-awesome
 // The browser will cache them based on standard HTTP cache headers.
 // This service worker mainly ensures the main app shell (HTML) loads offline.
@@ -45,3 +45,4 @@ return caches.delete(cacheName);
 })
 );
 });
+
